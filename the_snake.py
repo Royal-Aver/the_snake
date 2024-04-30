@@ -22,7 +22,7 @@ APPLE_COLOR = (255, 0, 0)
 
 SNAKE_COLOR = (0, 255, 0)
 
-SPEED = 20
+SPEED = 10
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
 
@@ -78,20 +78,32 @@ class Snake(GameObject):
         self.next_direction = None
         self.last = None
 
-    def move(self):
-        """Обновляет позицию змейки."""
+    def update_direction(self):
+        """Обновляет направление змейки."""
         if self.next_direction:
             self.direction = self.next_direction
+            self.next_direction = None
 
+    def move(self):
+        """Обновляет позицию змейки."""
         head = self.get_head_position()
         if self.direction == UP:
-            head[1] -= 1
+            head[1] -= 1 * GRID_SIZE
         elif self.direction == DOWN:
-            head[1] += 1
+            head[1] += 1 * GRID_SIZE
         elif self.direction == LEFT:
-            head[0] -= 1
+            head[0] -= 1 * GRID_SIZE
         elif self.direction == RIGHT:
-            head[0] += 1
+            head[0] += 1 * GRID_SIZE
+
+        if head[0] < 0:
+            head[0] = SCREEN_WIDTH - GRID_SIZE
+        elif head[0] >= SCREEN_WIDTH:
+            head[0] = 0
+        if head[1] < 0:
+            head[1] = SCREEN_HEIGHT - GRID_SIZE
+        elif head[1] >= SCREEN_HEIGHT:
+            head[1] = 0
 
         self.positions.insert(0, head)
 
@@ -115,11 +127,7 @@ class Snake(GameObject):
             last_rect = pygame.Rect(self.last, (GRID_SIZE, GRID_SIZE))
             pygame.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
 
-    def update_direction(self):
-        """Обновляет направление змейки."""
-        if self.next_direction:
-            self.direction = self.next_direction
-            self.next_direction = None
+
 
     def get_head_position(self):
         """Позиция головы змейки."""
@@ -160,9 +168,11 @@ def main():
         handle_keys(snake)
         clock.tick(SPEED)
         # screen.fill((BOARD_BACKGROUND_COLOR))
+        snake.update_direction()
+        snake.move()
+        # snake.reset()
         apple.draw()
         snake.draw()
-        snake.move()
 
         if snake.get_head_position() == apple.position:
             snake.length += 1
