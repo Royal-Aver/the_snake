@@ -26,7 +26,9 @@ SPEED = 10
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
 
-pygame.display.set_caption('Змейка')
+pygame.display.set_caption(
+    'Змейка.'
+    ' Для выхода нажмите клавишу ESC')
 
 clock = pygame.time.Clock()
 
@@ -34,24 +36,27 @@ clock = pygame.time.Clock()
 class GameObject():
     """Родительский класс для всех объектов на игровом поле."""
 
-    def __init__(self):
+    def __init__(self, body_color=SNAKE_COLOR):
         """Иницилизатор класса GameObject."""
         self.position = SCREEN_CENTER
-        self.body_color = SNAKE_COLOR
+        self.body_color = body_color
 
     def draw(self):
         """Отрисовка объекта на игровом поле."""
-        pass
+        rect = pygame.Rect(self.position, (GRID_SIZE, GRID_SIZE))
+        pygame.draw.rect(screen, self.body_color, rect)
+        pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
 
 
 class Apple(GameObject):
     """Класс, описывающий яблоко и действия с ним."""
 
-    def __init__(self, occupied_cells=[]):
+    def __init__(self, occupied_cells=None):
         """Иницилизатор класса Apple."""
-        super().__init__()
+        super().__init__(body_color=APPLE_COLOR)
+        if occupied_cells is None:
+            occupied_cells = []
         self.randomize_position(occupied_cells)
-        self.body_color = APPLE_COLOR
 
     def randomize_position(self, occupied_cells):
         """Устанавливает случайное положение яблока на игровом поле."""
@@ -64,9 +69,7 @@ class Apple(GameObject):
 
     def draw(self):
         """Метод draw класса Apple."""
-        rect = pygame.Rect(self.position, (GRID_SIZE, GRID_SIZE))
-        pygame.draw.rect(screen, self.body_color, rect)
-        pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
+        super().draw()
 
 
 class Snake(GameObject):
@@ -75,8 +78,7 @@ class Snake(GameObject):
     def __init__(self):
         """Иницилизатор класса Snake."""
         super().__init__()
-        self.positions = [self.position]
-        self.length = 1
+        self.reset()
         self.direction = RIGHT
         self.next_direction = None
         self.last = None
@@ -89,11 +91,11 @@ class Snake(GameObject):
 
     def move(self):
         """Обновляет позицию змейки."""
-        head = self.get_head_position()
+        head_x, head_y = self.get_head_position()
         x, y = self.direction
         new_head = ((
-            head[0] + x * GRID_SIZE) % SCREEN_WIDTH,
-            (head[1] + y * GRID_SIZE) % SCREEN_HEIGHT)
+            head_x + x * GRID_SIZE) % SCREEN_WIDTH,
+            (head_y + y * GRID_SIZE) % SCREEN_HEIGHT)
 
         self.positions.insert(0, new_head)
 
@@ -104,7 +106,8 @@ class Snake(GameObject):
 
     def draw(self):
         """Отрисовка змейки."""
-        head_rect = pygame.Rect(self.positions[0], (GRID_SIZE, GRID_SIZE))
+        head_rect = pygame.Rect(
+            self.get_head_position(), (GRID_SIZE, GRID_SIZE))
         pygame.draw.rect(screen, self.body_color, head_rect)
         pygame.draw.rect(screen, BORDER_COLOR, head_rect, 1)
 
@@ -120,14 +123,16 @@ class Snake(GameObject):
     def reset(self):
         """Сбрасывает змейку в начальное состояние."""
         self.length = 1
-        self.positions = [SCREEN_CENTER]
+        self.positions = [self.position]
         self.direction = choice((UP, DOWN, LEFT, RIGHT))
 
 
 def handle_keys(game_object):
     """Обработка нажатий клавиш."""
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if event.type == pygame.QUIT or (
+                event.type == pygame.KEYDOWN
+                and event.key == pygame.K_ESCAPE):
             pygame.quit()
             raise SystemExit
         elif event.type == pygame.KEYDOWN:
@@ -155,7 +160,7 @@ def main():
         if apple.position in snake.positions:
             snake.length += 1
             apple.randomize_position(snake.positions)
-        elif snake.positions[0] in snake.positions[1:]:
+        elif snake.get_head_position() in snake.positions[1:]:
             snake.reset()
             screen.fill((BOARD_BACKGROUND_COLOR))
             apple.randomize_position(snake.positions)
