@@ -33,7 +33,7 @@ pygame.display.set_caption(
 clock = pygame.time.Clock()
 
 
-class GameObject():
+class GameObject:
     """Родительский класс для всех объектов на игровом поле."""
 
     def __init__(self, body_color=SNAKE_COLOR):
@@ -43,9 +43,13 @@ class GameObject():
 
     def draw(self):
         """Отрисовка объекта на игровом поле."""
-        rect = pygame.Rect(self.position, (GRID_SIZE, GRID_SIZE))
-        pygame.draw.rect(screen, self.body_color, rect)
-        pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
+
+    @staticmethod
+    def draws_cell(position, body_color, border_color=BORDER_COLOR):
+        """Отрисовка ячейки на игровом поле."""
+        rect = pygame.Rect(position, (GRID_SIZE, GRID_SIZE))
+        pygame.draw.rect(screen, body_color, rect)
+        pygame.draw.rect(screen, border_color, rect, 1)
 
 
 class Apple(GameObject):
@@ -54,8 +58,7 @@ class Apple(GameObject):
     def __init__(self, occupied_cells=None):
         """Иницилизатор класса Apple."""
         super().__init__(body_color=APPLE_COLOR)
-        if occupied_cells is None:
-            occupied_cells = []
+        occupied_cells = occupied_cells or []
         self.randomize_position(occupied_cells)
 
     def randomize_position(self, occupied_cells):
@@ -69,7 +72,7 @@ class Apple(GameObject):
 
     def draw(self):
         """Метод draw класса Apple."""
-        super().draw()
+        self.draws_cell(self.position, self.body_color)
 
 
 class Snake(GameObject):
@@ -106,15 +109,12 @@ class Snake(GameObject):
 
     def draw(self):
         """Отрисовка змейки."""
-        head_rect = pygame.Rect(
-            self.get_head_position(), (GRID_SIZE, GRID_SIZE))
-        pygame.draw.rect(screen, self.body_color, head_rect)
-        pygame.draw.rect(screen, BORDER_COLOR, head_rect, 1)
+        self.draws_cell(self.get_head_position(), self.body_color)
 
         # Затирание последнего сегмента
         if self.last:
-            last_rect = pygame.Rect(self.last, (GRID_SIZE, GRID_SIZE))
-            pygame.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
+            self.draws_cell(
+                self.last, BOARD_BACKGROUND_COLOR, BOARD_BACKGROUND_COLOR)
 
     def get_head_position(self):
         """Позиция головы змейки."""
